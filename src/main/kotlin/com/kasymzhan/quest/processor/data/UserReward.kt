@@ -11,7 +11,7 @@ data class UserReward(
     @Id
     val id: ObjectId,
     val userId: String,
-    val questId: String,
+    val quest: Quest,
     @field:JsonProperty("status")  // Ensures proper deserialization
     private var _status: Status,
     var dateReceived: Date? = null,

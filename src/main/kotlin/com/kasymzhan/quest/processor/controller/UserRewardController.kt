@@ -30,7 +30,7 @@ class UserRewardController(
             UserReward(
                 id = ObjectId(),
                 userId = id,
-                questId = it.id,
+                quest = it,
                 _status = Status.NOT_CLAIMED,
             )
         }
