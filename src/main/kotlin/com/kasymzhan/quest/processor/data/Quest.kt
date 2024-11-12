@@ -8,9 +8,8 @@ data class Quest(
     var duplication: Int,
     val name: String,
     val description: String,
+    private val initialStreak: Int = streak,
 ) {
-    private val initialStreak: Int = streak
-
     fun claim(onClaim: () -> Unit) {
         if (streak == 0 || duplication == 0)
             return
