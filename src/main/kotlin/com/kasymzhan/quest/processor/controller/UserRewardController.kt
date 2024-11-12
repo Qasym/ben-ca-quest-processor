@@ -29,7 +29,13 @@ class UserRewardController(
         val token = getToken(http)
         if (!tokenService.isValid(token))
             return ResponseEntity("Invalid token!", HttpStatus.FORBIDDEN)
-        val quests = getQuests(token!!)
+        var quests = getQuests(token!!)
+        val allUserRewards = userRewardRepository.findByUserId(id)
+        quests = quests.filter { quest -> // filter quests that user(id) does not have
+            !allUserRewards.any { it.quest.id == quest.id }
+        }
+        if (quests.isEmpty())
+            return ResponseEntity("User already has all quests", HttpStatus.OK)
         val userRewards = quests.map {
             UserReward(
                 id = ObjectId(),
