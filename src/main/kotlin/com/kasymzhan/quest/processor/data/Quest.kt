@@ -2,14 +2,14 @@ package com.kasymzhan.quest.processor.data
 
 data class Quest(
     val id: String,
-    val rewardId: String,
+    val reward: Reward,
     val autoClaim: Boolean,
     var streak: Int,
     var duplication: Int,
     val name: String,
     val description: String,
 ) {
-    val initialStreak: Int = streak
+    private val initialStreak: Int = streak
 
     fun claim(onClaim: () -> Unit) {
         if (streak == 0 || duplication == 0)

@@ -4,6 +4,7 @@ import com.kasymzhan.quest.processor.data.Quest
 import com.kasymzhan.quest.processor.data.Status
 import com.kasymzhan.quest.processor.data.UserReward
 import com.kasymzhan.quest.processor.repository.UserRewardRepository
+import com.kasymzhan.quest.processor.service.JwtTokenService
 import jakarta.servlet.http.HttpServletRequest
 import org.bson.types.ObjectId
 import org.springframework.core.ParameterizedTypeReference
@@ -21,11 +22,14 @@ import org.springframework.web.reactive.function.client.WebClient
 class UserRewardController(
     private val userRewardRepository: UserRewardRepository,
     val webClient: WebClient,
+    val tokenService: JwtTokenService,
 ) {
     @PostMapping("/track/registration/{id}")
     fun trackNewUser(@PathVariable id: String, http: HttpServletRequest): ResponseEntity<String> {
         val token = getToken(http)
-        val quests = getQuests(token)
+        if (!tokenService.isValid(token))
+            return ResponseEntity("Invalid token!", HttpStatus.FORBIDDEN)
+        val quests = getQuests(token!!)
         val userRewards = quests.map {
             UserReward(
                 id = ObjectId(),
@@ -57,13 +61,12 @@ class UserRewardController(
         userRewardRepository.findAll()
 
     private fun getQuests(token: String): List<Quest> =
-        webClient.get().uri("http://localhost:2003/quests/get/all")
+        webClient.get().uri("http://localhost:2003/quests")
             .header("Authorization", "Bearer $token")
             .retrieve()
             .bodyToMono(object : ParameterizedTypeReference<List<Quest>>() {})
             .block() ?: emptyList()
 
-    private fun getToken(http: HttpServletRequest): String {
-        return ""
-    }
+    private fun getToken(http: HttpServletRequest): String? =
+        tokenService.tryParseToken(http)
 }
