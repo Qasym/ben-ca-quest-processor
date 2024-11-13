@@ -1,5 +1,7 @@
 package com.kasymzhan.quest.processor.data
 
+import kotlin.reflect.KFunction2
+
 data class Quest(
     val id: String,
     val reward: Reward,
@@ -10,7 +12,7 @@ data class Quest(
     val description: String,
     private val initialStreak: Int = streak,
 ) {
-    fun claim(onClaim: () -> Unit) {
+    fun claim(userId: String, onClaim: KFunction2<String, Reward, Unit>) {
         if (streak == 0 || duplication == 0)
             return
         streak--
@@ -19,7 +21,7 @@ data class Quest(
                 duplication--
                 streak = initialStreak
             }
-            onClaim()
+            onClaim(userId, reward)
         }
     }
 }

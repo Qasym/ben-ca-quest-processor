@@ -1,6 +1,7 @@
 package com.kasymzhan.quest.processor.controller
 
 import com.kasymzhan.quest.processor.data.Quest
+import com.kasymzhan.quest.processor.data.Reward
 import com.kasymzhan.quest.processor.data.Status
 import com.kasymzhan.quest.processor.data.UserReward
 import com.kasymzhan.quest.processor.repository.UserRewardRepository
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.reactive.function.client.WebClient
+import java.util.*
 
 @RestController
 @RequestMapping
@@ -45,11 +47,21 @@ class UserRewardController(
             )
         }
         userRewards.forEach { userRewardRepository.save(it) }
+        trackAction(id, "registration")
         return ResponseEntity("Registered new user $id", HttpStatus.OK)
     }
 
-    @PostMapping("/track/{userId}/{action}")
+    @PostMapping("/track/{id}/{action}")
     fun trackAction(@PathVariable id: String, @PathVariable action: String): ResponseEntity<String> {
+        val userQuests = userRewardRepository.findByUserId(id).map { it.quest }
+        if (userQuests.isEmpty())
+            return ResponseEntity("No quests for this user", HttpStatus.I_AM_A_TEAPOT)
+        userQuests.forEach {
+            if (it.name == action) {
+                println("Supposed to reward user!!! >Not Yet Implemented<")
+//                it.claim(id, ::rewardUser) // read rewardUser method comments
+            }
+        }
         return ResponseEntity("successfully tracked $action", HttpStatus.OK)
     }
 
@@ -75,4 +87,22 @@ class UserRewardController(
 
     private fun getToken(http: HttpServletRequest): String? =
         tokenService.tryParseToken(http)
+
+    // This function should not be used
+    // as this microservice doesn't have access to username
+    // which is necessary for proper token generation
+    // todo: Improve on microservices design and predict this kind of situations before they happen
+    private fun rewardUser(userId: String, reward: Reward) {
+        val url = "http://localhost:2001/reward/$userId"
+        val roles = mapOf("roles" to listOf("ADMIN")) // generate admin role
+        val token = tokenService // token lives 10 seconds
+            .generate(userId, Date(Date().time + 10000), roles)
+        webClient.post()
+            .uri(url)
+            .header("Authorization", "Bearer $token")
+            .bodyValue(reward)
+            .retrieve()
+            .toBodilessEntity()
+            .subscribe()
+    }
 }
